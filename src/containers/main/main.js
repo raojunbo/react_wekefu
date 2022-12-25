@@ -1,30 +1,15 @@
-import React, { useState } from 'react';
-import LeftNavigation from '../../components/left_navigation';
-import { Navigate, Outlet,  useNavigate, useParams } from 'react-router-dom'
+import React from 'react';
+// import LeftNavigation from './left_navigation';
+import RightContent from './right_content';
 
-import {
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    UploadOutlined,
-    UserOutlined,
-    VideoCameraOutlined,
-} from '@ant-design/icons';
-import { Layout, Menu } from 'antd';
-
-const { Header, Sider, Content } = Layout;
+import './main.less'
 
 function Main() {
-    const [collapsed, setCollapsed] = useState(false);
     return (
-        <div>
-            <LeftNavigation/>
-            <div >
-                <Outlet></Outlet>
-            </div>
-            
+        <div className='main'>
+            <RightContent/>
         </div>
     )
 };
-
 
 export default Main;

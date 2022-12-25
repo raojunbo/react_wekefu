@@ -1,29 +1,37 @@
 import { Navigate } from 'react-router-dom'
 import Main from '../containers/main/main'
-// 全局路由配置入口
+import TrainKLine from '../containers/train/train_kline'
+import PointFigure from '../containers/point/point_figure'
+import TrainKlineHistory from '../containers/train/train_kline_history'
 export default [
     {
         path: '/',
-        element: <Navigate to='/main'/>
+        element: <Navigate to='/main/trainkline' />
     },
-    // main下面的子路由
+    {
+        path: '/login',
+        element: <Main />
+    },
+    {
+        path: '/register',
+        element: <Main />
+    },
     {
         path: '/main',
         element: <Main />,
         children: [
-            // {
-            //     path: 'dashen',
-            //     element: <Dashen />
-            // },
-            // {
-            //     path: 'laoban',
-            //     element: <Laoban />
-            // }
+            {
+                path: 'trainkline',
+                element: <TrainKLine />
+            },
+            {
+                path: 'pointfigure',
+                element: <PointFigure />
+            },
+            {
+                path: 'trainhistory',
+                element: <TrainKlineHistory />
+            }
         ]
-    },
-   
-    // {
-    //     path: '*',
-    //     element: <NotFound />
-    // },
+    }
 ]
