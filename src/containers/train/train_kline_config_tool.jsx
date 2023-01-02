@@ -4,16 +4,16 @@ import { a_symbol_sh } from './a_stock_symbol_sh';
 import './train_kline_config_tool.less'
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { randomOneDate, stockformatDate, randomOneStock } from './train_kline_config_random.js'
-
+import { randomOneDate, randomOneStock } from './train_kline_config_random.js'
+import moment from 'moment/moment';
 export default class TrainKlineConfigTool extends Component {
     constructor(props) {
         super(props)
         this.dateRef = React.createRef()
         // 状态
         this.state = {
-            'selected_item': props.selected_info.selected_item,
-            'selected_start_date': props.selected_info.selected_start_date
+            'selected_item': props.selected_info.selected_item,//{symbol:'', name:''}
+            'selected_start_date': props.selected_info.selected_start_date// date
         }
     }
     sureChangeTrainConfig() {
@@ -37,7 +37,7 @@ export default class TrainKlineConfigTool extends Component {
             }
         })
     }
-    manualChangeOneDate(date, dateString) {
+    manualChangeOneDate(date) {
         this.setState(() => {
             return {
                 'selected_start_date': date
@@ -49,10 +49,14 @@ export default class TrainKlineConfigTool extends Component {
     }
     render() {
         const { selected_item, selected_start_date } = this.state
-        console.log('这是即将要进行渲染' + JSON.stringify(selected_item))
         return (
             <div className='train_kline_line_config_tool'>
                 <div className='train_kline_line_config_tool_content'>
+                    {/* 关闭 */}
+                    <div className='train_kline_line_config_tool_row_end' >
+                        <div class="iconfont  icon-close" onClick={() => this.props.closeTool()}></div>
+                    </div>
+                    {/* 选择 */}
                     <div className='train_kline_line_config_tool_row'>
                         <div className="line_margin">市场：&nbsp;</div>
                         <Select
@@ -84,7 +88,7 @@ export default class TrainKlineConfigTool extends Component {
                     <div className='train_kline_line_config_tool_row'>
                         <div className="line_margin">起始时间： &nbsp;</div>
 
-                        <DatePicker value={dayjs(stockformatDate(selected_start_date, 'YYYY-MM-DD'), 'YYYY-MM-DD')} onChange={(date, dateString) => this.manualChangeOneDate(date, dateString)} />
+                        <DatePicker value={dayjs(selected_start_date)} onChange={(date) => this.manualChangeOneDate(date)} />
                         &nbsp;&nbsp;
                         <Button type='primary' onClick={() => this.randomOneDateAction()}>随机一次</Button>
                     </div>

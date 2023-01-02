@@ -1,22 +1,23 @@
 import React, { Component } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 import TrainKlineTop from './train_kline_top';
 import TrainKlinebottom from './train_kline_bottom'
 import TrainKlineLineTool from './train_kline_line_tool'
 import TrainKlineConfigTool from './train_kline_config_tool';
 import TrainKlineNoteTool from './train_kline_note_tool';
-import {randomOneStock,randomOneDate, stockformatDate} from './train_kline_config_random.js'
+import { randomOneStock, randomOneDate } from './train_kline_config_random.js'
 import HQChart from 'hqchart';
 import { a_symbol_sh } from './a_stock_symbol_sh';
 import './train_kline.less'
-
+import { Button } from 'antd';
+import dayjs from 'dayjs';
 function DefaultData() { }
 DefaultData.GetKLineOption = function () {
     let data =
     {
         Type: 'K线训练',
-        Symbol:'', // 符号标识
+        Symbol: '600000.sh', // 符号标识
         SymbolName: '浦发银行',// 符号名字
         Windows: //窗口指标
             [
@@ -51,8 +52,7 @@ DefaultData.GetKLineOption = function () {
         Train: {
             DataCount: 200, // 训练数据
             StartDate: {
-                // 20180201
-                Date: '20221105'
+                Date: '20220905' // 起始日期
             }
         },
         Frame:  //子框架设置
@@ -68,7 +68,8 @@ DefaultData.GetKLineOption = function () {
         DrawTool: {
             // 存储到缓存中
             StorageKey: '4E7EA133-D6C8-4776-9869-1DDDCC5FA744'
-        }
+        },
+        EnableZoomUpDown: true
     };
     return data;
 }
@@ -79,18 +80,29 @@ class TrainKLine extends Component {
         this.klineRef = React.createRef()
         this.initCanvas = this.initCanvas.bind(this);
 
-        const money = 50000
+        // 随机一个时间
+        const selected_start_date = randomOneDate()
+        const beginDate = dayjs(selected_start_date).format('YYYYMMDD')
+
+        // 随机一个股票
+        const selected_item = randomOneStock(a_symbol_sh)
+        const Symbol = selected_item.symbol + '.sh'
+        const SymbolName = selected_item.name
+        // 构建初始Option
+        let KLineOption = DefaultData.GetKLineOption()
+        KLineOption.Train =  { DataCount: 200, DateTime: { Date: beginDate } }
+        KLineOption.Symbol = Symbol
+        KLineOption.SymbolName = SymbolName
+
+        // 本地状态数据
+        this.initMoney = 100000
         this.state = {
-            // 初始化数据
-            initMoney: money,// 初始资金
-            moneyAssets: money, // 剩余资金
+            initMoney: this.initMoney,// 初始资金
+            moneyAssets: this.initMoney, // 剩余资金
             stockAssets: 0, // 股票资产，根据当前持有股票的数量和价格计算
             stockCount: 0, // 股票数量
-            totalAssets: money, // 总资产
+            totalAssets: this.initMoney, // 总资产
 
-            // 界面控制
-            toBuyCount: 0, // 要买的数量
-            toSellCount: 0, // 要卖的数量
             isAutoMove: false, // 是否自动移动kline
             remainLineCount: 0, // 剩余的k线
 
@@ -104,42 +116,31 @@ class TrainKLine extends Component {
             isShowConfigTool: false, // 是否显示配
             isShowPictureSettingTool: false,
 
-            Symbol:'', // 符号标识
-            SymbolName: '',// 符号名字
-            StartDate:null,
+            Symbol: selected_item.Symbol, // 符号标识 600000
+            SymbolName: selected_item.name,// 符号名字 浦发银行
+            StartDate: selected_start_date, // 开始日期
 
             KLine:
             {
                 JSChart: null,
-                Option: DefaultData.GetKLineOption()
+                Option: KLineOption
             }
         }
     }
-   
     initCanvas() {
 
         if (this.state.KLine.JSChart) return;
 
-        // this.state.KLine.Option.Symbol = this.state.symbol;
-
-        const query = {
-            'selected_item':  randomOneStock(a_symbol_sh),
-            'selected_start_date': randomOneDate()
-        }
-        this.changeSymbol(query)
-
-
         let chart = HQChart.Chart.JSChart.Init(document.getElementById("time_graph_canvas"));
 
         // 设置Kline的配置
-
         chart.SetOption(this.state.KLine.Option);
         // 保存图表的引用
         this.state.KLine.JSChart = chart;
 
         // JSCHART_EVENT_ID.RECV_TRAIN_MOVE_STEP 实际上是4
         chart.AddEventCallback({
-            event: 4 ,
+            event: 4,
             callback: (event, data, obj) => {
                 this.OnKLineMove(event, data, obj);
             }
@@ -151,17 +152,17 @@ class TrainKLine extends Component {
                 this.OnFinishDrawPicture(event, data, obj)
             }
         })
-       // 23 选中某个画图
-        chart.AddEventCallback( {
-            event: 23, 
-            callback:(event,data,obj)=>{
-                 this.OnSelectDrawPicture(event,data,obj); 
+        // 23 选中某个画图
+        chart.AddEventCallback({
+            event: 23,
+            callback: (event, data, obj) => {
+                this.OnSelectDrawPicture(event, data, obj);
             }
-       });
+        });
     }
     // 开始画图
     CreateDrawPicture(lineName) {
-        if(lineName == '全部删除') {
+        if (lineName == '全部删除') {
             this.ClearChartDrawPicture()
             return
         }
@@ -173,7 +174,6 @@ class TrainKLine extends Component {
         };
         this.state.KLine.JSChart.CreateChartDrawPicture(lineName, drawOption);
     }
-    
     // 一个画图完成
     OnFinishDrawPicture(event, data, obj) {
         console.log('[KLineChart::OnFinishDrawPicture] data', data);
@@ -186,7 +186,6 @@ class TrainKLine extends Component {
     ClearChartDrawPicture() {
         this.state.KLine.JSChart.JSChartContainer.ClearChartDrawPicture()
     }
-    
     componentDidMount() {
         // 在挂载时初始化Canvas
         this.OnSize()
@@ -250,8 +249,6 @@ class TrainKLine extends Component {
     Stop() {
         this.state.KLine.JSChart.JSChartContainer.Stop()
     }
-    
-
     getStyleText() {
         var chartHeight = window.innerHeight - 80;
         var chartWidth = window.innerWidth - 20;
@@ -262,8 +259,8 @@ class TrainKLine extends Component {
         return styleText
     }
 
-    buy() {
-        let { latestKData, toBuyCount, moneyAssets, stockCount, orderID, aryTrade, KLine } = this.state
+    buy(toBuyCount) {
+        let { latestKData, moneyAssets, stockCount, orderID, aryTrade, KLine } = this.state
         if (!latestKData) {
             return
         }
@@ -294,7 +291,6 @@ class TrainKLine extends Component {
         const remainStockAssets = remainStockCount * latestKData.Close
 
         KLine.JSChart.JSChartContainer.BuyOrSell(trade, true);
-        // KLine.JSChart.KLineTrainChartContainer.BuyOrSell(trade, true);
         KLine.JSChart.JSChartContainer.MoveNextKLineData()
 
         // 修改状态去渲染
@@ -307,8 +303,8 @@ class TrainKLine extends Component {
             aryTrade: aryTrade
         })
     }
-    sell() {
-        let { latestKData, toSellCount, moneyAssets, stockCount, orderID, aryTrade, KLine } = this.state
+    sell(toSellCount) {
+        let { latestKData, moneyAssets, stockCount, orderID, aryTrade, KLine } = this.state
         if (!latestKData) {
             return
         }
@@ -355,61 +351,13 @@ class TrainKLine extends Component {
             stockMoney: stockMoney
         })
     }
+
     autoMoveSetingCallBack(value) {
         this.setState({
             isAutoMove: value
         })
     }
-    buyAndSellPercentCallBack(isBuy, persent) {
-        // 通过persent计算出股票数量
-        // console.log("买入与卖出百分比设置了")
-        const { moneyAssets, stockCount } = this.state
-        if (isBuy) {
-            const { latestKData } = this.state
-            let toBuyCount = (moneyAssets / latestKData.Close) * persent
-            this.setState({
-                toBuyCount: parseInt(toBuyCount)
-            })
-        } else {
-            let toSellCount = stockCount * persent
-            this.setState({
-                toSellCount: parseInt(toSellCount)
-            })
-        }
-    }
-    buyAndSellCountChangeCallBack(isBuy, count) {
-        let { latestKData, moneyAssets, stockCount } = this.state
 
-        if (isBuy) {
-            const spend = latestKData.Close * count
-            if (count <= 0) {
-                alert("请输入正确的数量")
-                return
-            }
-            if (count > moneyAssets) {
-                alert("钱不够了")
-                return
-            }
-            this.setState({
-                toBuyCount: count
-            })
-        } else {
-            if (count > stockCount) {
-                alert("超出可卖数量")
-                return
-            }
-            this.setState({
-                toSellCount: count
-            })
-        }
-    }
-    buyAndSellCallBack(isBuy) {
-        if (isBuy) {
-            this.buy()
-        } else {
-            this.sell()
-        }
-    }
     showTool(toolName) {
         const { isShowLineTool, isShowNoteTool, isShowConfigTool } = this.state
         if (toolName === 'line') {
@@ -442,66 +390,107 @@ class TrainKLine extends Component {
     closeTool() {
         this.setState({
             isShowLineTool: false,
-            isShowNoteTool: false
+            isShowNoteTool: false,
+            isShowConfigTool: false
         })
     }
-    
     sureChangeConfig(query) {
         this.changeSymbol(query)
         this.setState({
             isShowConfigTool: false
         })
     }
+    // 改变符号
     changeSymbol(query) {
         const { selected_item, selected_start_date } = query
-        
-        this.setState(() => {
-             // 请求时间的标准化
-            const beginDate = stockformatDate(selected_start_date)
-            var option = {
-                Symbol: selected_item.symbol + '.sh',
-                Train: { DataCount: 200, DateTime: { Date: beginDate } },
-            }
-            this.state.KLine.JSChart.JSChartContainer.RestartTrain(option)
 
-            return {
-                Symbol: selected_item.symbol,
-                SymbolName: selected_item.name,
-                StartDate: selected_start_date,
-                aryTrade: [],
-                latestKData: null,
-                latestTrade: null
-            }
+        const beginDate = dayjs(selected_start_date).format('YYYYMMDD')
+
+
+        let option = this.state.KLine.Option
+        option.Symbol = selected_item.symbol + '.sh'
+        option.SymbolName = selected_item.name
+        option.Train = { DataCount: 200, DateTime: { Date: beginDate } }
+
+        this.state.KLine.JSChart.JSChartContainer.RestartTrain(option)
+
+
+        this.setState({
+            moneyAssets: this.initMoney, // 剩余资金
+            stockAssets: 0, // 股票资产，根据当前持有股票的数量和价格计算
+            stockCount: 0, // 股票数量
+            totalAssets: this.initMoney, // 总资产
+
+            isAutoMove: false, // 是否自动移动kline
+            remainLineCount: 0, // 剩余的k线
+
+            latestKData: null, // 最后的一个k线数据
+            orderID: 0, // 订单id
+            latestTrade: null, // 上次的交易
+            aryTrade: [], // 交易数组
+
+            isShowLineTool: false, // 是否显示画图
+            isShowNoteTool: false, // 是否显示笔记
+            isShowConfigTool: false, // 是否显示配
+            isShowPictureSettingTool: false,
+
+            Symbol: selected_item.symbol, // 符号标识
+            SymbolName: selected_item.name,// 符号名字
+            StartDate: selected_start_date, // 其实时间
         })
     }
-
+    zoomUp() {
+        // OP_ZOOM_OUT:3,  //缩小
+        // OP_ZOOM_IN:4,   //放大
+        this.state.KLine.JSChart.JSChartContainer.ChartOperator({ 'ID': 4 })
+    }
+    zoomDown() {
+        this.state.KLine.JSChart.JSChartContainer.ChartOperator({ 'ID': 3 })
+    }
     render() {
-        let { initMoney, isAutoMove,
+        let {
+            initMoney,
+            isAutoMove,
             remainLineCount,
             moneyAssets,
             stockAssets,
             stockCount,
-            toSellCount,
-            toBuyCount,
+            latestKData,
+            // toSellCount,
+            // toBuyCount,
         } = this.state
-        const { isShowConfigTool, isShowLineTool, isShowNoteTool} = this.state
-        
+
+        const { isShowConfigTool, isShowLineTool, isShowNoteTool } = this.state
+
         const selected_info = {
-            'selected_item': {'name': this.state.SymbolName, 'symbol': this.state.Symbol},
+            'selected_item': { 'name': this.state.SymbolName, 'symbol': this.state.Symbol },
             'selected_start_date': this.state.StartDate
         }
-        
+
         return (
             <div className='train_line_main'>
                 <TrainKlineTop showTool={(toolName) => this.showTool(toolName)}></TrainKlineTop>
-                {isShowLineTool ? <TrainKlineLineTool 
-                                toolSelect={(lineName) => this.CreateDrawPicture(lineName)} 
-                              
-                                closeTool={() => this.closeTool()}></TrainKlineLineTool> : null
+                {isShowLineTool ? <TrainKlineLineTool
+                    toolSelect={(lineName) => this.CreateDrawPicture(lineName)}
+
+                    closeTool={() => this.closeTool()}></TrainKlineLineTool> : null
                 }
                 {isShowNoteTool ? <TrainKlineNoteTool closeTool={() => this.closeTool()}></TrainKlineNoteTool> : null}
-                {isShowConfigTool ? <TrainKlineConfigTool selected_info={selected_info} sureChangeConfig={(query) => this.sureChangeConfig(query)}></TrainKlineConfigTool> : null}
-                <div className='train_kline_chart' style={this.getStyleText()} ref={this.klineRef} id="time_graph_canvas"></div>
+                {isShowConfigTool ? <TrainKlineConfigTool
+                    closeTool={() => this.closeTool()}
+                    selected_info={selected_info}
+                    sureChangeConfig={(query) => this.sureChangeConfig(query)}></TrainKlineConfigTool> : null}
+                <div>
+                    <div className='train_kline_chart'>
+                        <div style={this.getStyleText()} ref={this.klineRef} id="time_graph_canvas"></div>
+                    </div>
+
+                    <Button className='train_line_zoom_up' onClick={() => this.zoomUp()}>放大</Button>
+                    <Button className='train_line_zoom_down' onClick={() => this.zoomDown()}>缩小</Button>
+                    {/* <div className='train_line_zoom_up'>放大</div> */}
+                    {/* <div className='train_line_zoom_down' >缩小</div> */}
+                </div>
+
                 <TrainKlinebottom
                     initMoney={initMoney}
                     moneyAssets={moneyAssets}
@@ -511,14 +500,14 @@ class TrainKLine extends Component {
 
                     isAutoMove={isAutoMove}
                     remainLineCount={remainLineCount}
-                    toSellCount={toSellCount}
-                    toBuyCount={toBuyCount}
+
+                    closePrice={latestKData == null ? 0 : latestKData.Close}
 
                     nextKLineCallBack={() => this.MoveNextKLine()}
                     autoMoveSetingCallBack={(value) => this.autoMoveSetingCallBack(value)}
-                    buyAndSellCountChangeCallBack={(isBuy, value) => this.buyAndSellCountChangeCallBack(isBuy, value)}
-                    buyAndSellCallBack={(isBuy) => this.buyAndSellCallBack(isBuy)}
-                    buyAndSellPercentCallBack={(isBuy, persent) => this.buyAndSellPercentCallBack(isBuy, persent)}
+
+                    buyCallBack={(value) => this.buy(value)}
+                    sellCallBack={(value) => this.sell(value)}
                 ></TrainKlinebottom>
             </div>
         )
