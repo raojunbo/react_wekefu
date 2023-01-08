@@ -88,6 +88,7 @@ class TrainKLine extends Component {
         const selected_item = randomOneStock(a_symbol_sh)
         const Symbol = selected_item.symbol + '.sh'
         const SymbolName = selected_item.name
+
         // 构建初始Option
         let KLineOption = DefaultData.GetKLineOption()
         KLineOption.Train =  { DataCount: 200, DateTime: { Date: beginDate } }
@@ -116,8 +117,8 @@ class TrainKLine extends Component {
             isShowConfigTool: false, // 是否显示配
             isShowPictureSettingTool: false,
 
-            Symbol: selected_item.Symbol, // 符号标识 600000
-            SymbolName: selected_item.name,// 符号名字 浦发银行
+            Symbol: Symbol, // 符号标识 600000
+            SymbolName: SymbolName,// 符号名字 浦发银行
             StartDate: selected_start_date, // 开始日期
 
             KLine:
@@ -408,9 +409,10 @@ class TrainKLine extends Component {
 
 
         let option = this.state.KLine.Option
-        option.Symbol = selected_item.symbol + '.sh'
+        option.Symbol = selected_item.symbol
         option.SymbolName = selected_item.name
         option.Train = { DataCount: 200, DateTime: { Date: beginDate } }
+        console.log("这是需要改变的" + JSON.stringify(option))
 
         this.state.KLine.JSChart.JSChartContainer.RestartTrain(option)
 
@@ -466,6 +468,7 @@ class TrainKLine extends Component {
             'selected_item': { 'name': this.state.SymbolName, 'symbol': this.state.Symbol },
             'selected_start_date': this.state.StartDate
         }
+        console.log("这是selected_info" + JSON.stringify(selected_info))
 
         return (
             <div className='train_line_main'>

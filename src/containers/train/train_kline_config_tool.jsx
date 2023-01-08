@@ -11,6 +11,7 @@ export default class TrainKlineConfigTool extends Component {
         super(props)
         this.dateRef = React.createRef()
         // 状态
+        console.log("这是tool" + JSON.stringify(props))
         this.state = {
             'selected_item': props.selected_info.selected_item,//{symbol:'', name:''}
             'selected_start_date': props.selected_info.selected_start_date// date
